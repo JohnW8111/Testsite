@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sector Growth Potential</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 2rem;
+        color: #1f2937;
+        background: #f9fafb;
+      }
+      header {
+        margin-bottom: 1.5rem;
+      }
+      .card {
+        background: #ffffff;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+        margin-bottom: 1.5rem;
+      }
+      .score {
+        font-size: 2.5rem;
+        font-weight: 600;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.5rem 0.25rem;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .muted {
+        color: #6b7280;
+      }
+      .status {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+      }
+      .error {
+        color: #b91c1c;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Consumer Discretionary Growth Potential</h1>
+      <p class="muted">
+        Example dashboard pulling public data (FRED) and computing a simple
+        weighted growth score.
+      </p>
+    </header>
+
+    <section class="card">
+      <div class="score" id="score">--</div>
+      <div class="muted" id="score-detail">Waiting for data...</div>
+      <div class="status" id="status"></div>
+    </section>
+
+    <section class="card">
+      <h2>Signals</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Signal</th>
+            <th>Value</th>
+            <th>As of</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody id="signals"></tbody>
+      </table>
+    </section>
+
+    <script>
+      const apiBase =
+        window.API_BASE || "http://localhost:8000/api/growth/consumer-discretionary";
+
+      const scoreEl = document.getElementById("score");
+      const scoreDetailEl = document.getElementById("score-detail");
+      const signalsEl = document.getElementById("signals");
+      const statusEl = document.getElementById("status");
+
+      async function loadData() {
+        statusEl.textContent = "Loading data...";
+        statusEl.classList.remove("error");
+
+        try {
+          const response = await fetch(apiBase);
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+          const data = await response.json();
+
+          scoreEl.textContent = data.score.toFixed(3);
+          scoreDetailEl.textContent = `Sector: ${data.sector}`;
+
+          signalsEl.innerHTML = data.signals
+            .map(
+              (signal) => `
+                <tr>
+                  <td>${signal.name}</td>
+                  <td>${signal.value.toFixed(4)}</td>
+                  <td>${signal.as_of}</td>
+                  <td>${signal.source}</td>
+                </tr>
+              `
+            )
+            .join("");
+
+          statusEl.textContent = "Data loaded.";
+        } catch (error) {
+          statusEl.textContent =
+            "Unable to load data. Ensure the backend is running and FRED_API_KEY is set.";
+          statusEl.classList.add("error");
+        }
+      }
+
+      loadData();
+    </script>
+  </body>
+</html>
